@@ -8,20 +8,23 @@
     "gen": "graphql-codegen --config codegen.yml"
   },
   "dependencies": {
-    "@chakra-ui/icons": "^1.0.0",
+    "@chakra-ui/icons": "^1.0.5",
     "@chakra-ui/react": "^1.0.0",
     "@emotion/react": "^11.0.0",
     "@emotion/styled": "^11.0.0",
+    "@urql/core": "^2.0.0",
     "@urql/exchange-graphcache": "^3.3.3",
     "formik": "^2.2.6",
     "framer-motion": "^2.9.4",
     "graphql": "^15.4.0",
+    "isomorphic-unfetch": "^3.1.0",
     "next": "latest",
     "next-urql": "^2.1.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-is": "^17.0.1",
-    "urql": "^1.11.4"
+    "urql": "^1.11.4",
+    "wonka": "^4.0.15"
   },
   "license": "MIT",
   "devDependencies": {
@@ -31,6 +34,7 @@
     "@graphql-codegen/typescript-urql": "^2.0.3",
     "@types/next": "^9.0.0",
     "@types/node": "^14.14.20",
+    "@typescript-eslint/eslint-plugin": "^4.15.1",
     "eslint": "^7.4.0",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.12.0",

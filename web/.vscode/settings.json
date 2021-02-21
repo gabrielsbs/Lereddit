@@ -6,12 +6,7 @@
   "editor.wordWrapColumn": 120,
   "editor.rulers": [142],
   "editor.wrappingIndent": "indent",
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "[javascriptreact]": {
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": true,

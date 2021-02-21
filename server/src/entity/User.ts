@@ -1,5 +1,7 @@
 import { Field, ObjectType } from 'type-graphql'
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { Post } from './Post'
+import { Updoot } from './Updoot'
 
 @ObjectType()
 @Entity()
@@ -13,7 +15,11 @@ export class User {
   created_at: string
 
   @Field()
-  @Column({ type: 'timestamp', default: 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    default: 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP'
+  })
   updated_at: string
 
   @Field()
@@ -22,4 +28,10 @@ export class User {
 
   @Column()
   password: string
+
+  @OneToMany(() => Post, post => post.creator)
+  posts: Post[]
+
+  @OneToMany(() => Updoot, updoot => updoot.user)
+  updoots: Updoot[]
 }

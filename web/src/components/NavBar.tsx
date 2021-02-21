@@ -10,7 +10,7 @@ const NavBar: React.FC<NavBarProps> = () => {
   const [, logout] = useLogoutMutation()
   let body = null
   if (fetching) {
-  } else if (!data.me) {
+  } else if (!data || !data.me) {
     body = (
       <>
         <NextLink href='/login'>
@@ -18,7 +18,7 @@ const NavBar: React.FC<NavBarProps> = () => {
             Login
           </Link>
         </NextLink>
-        <NextLink href='/login'>
+        <NextLink href='/register'>
           <Link color='white'>Register</Link>
         </NextLink>
       </>
@@ -34,7 +34,7 @@ const NavBar: React.FC<NavBarProps> = () => {
     )
   }
   return (
-    <Flex bg='tan' p={4}>
+    <Flex zIndex={2} bg='tan' position='sticky' top={0} p={4}>
       <Box ml={'auto'}>{body}</Box>
     </Flex>
   )

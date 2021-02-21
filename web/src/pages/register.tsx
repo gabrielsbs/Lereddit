@@ -5,7 +5,13 @@ import * as React from 'react'
 import { InputField } from '../components/InputField'
 import { Wrapper } from '../components/Wrapper'
 import { useRegisterMutation } from '../generated/graphql'
+import { createUrlClient } from '../utils/createUrlClient'
 import toErrorMap from '../utils/toErrorMap'
+import { withUrqlClient } from 'next-urql'
+
+
+const urlClient = withUrqlClient(createUrlClient, { ssr: true })
+
 
 interface RegisterProps {}
 
@@ -18,7 +24,6 @@ const Register = props => {
         initialValues={{ username: '', password: '' }}
         onSubmit={async (values, { setErrors }) => {
           const response = await register(values)
-          console.log(response.data?.register.errors)
           if (response.data?.register.errors) {
             setErrors(toErrorMap(response.data.register.errors))
           } else if (response.data?.register.user) {
@@ -46,4 +51,4 @@ const Register = props => {
   )
 }
 
-export default Register
+export default urlClient(Register)

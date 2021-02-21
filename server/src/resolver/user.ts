@@ -36,7 +36,6 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req }: MyContext): Promise<User | null | undefined> {
     const userRepository = getRepository(User)
-
     if (!req.session.userId) {
       return null
     }
@@ -143,4 +142,5 @@ export class UserResolver {
       })
     )
   }
+
 }
