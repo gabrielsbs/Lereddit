@@ -1,10 +1,11 @@
 import { gql } from '@urql/core'
-import { cacheExchange, Resolver } from '@urql/exchange-graphcache'
+import { Cache, cacheExchange, Resolver } from '@urql/exchange-graphcache'
 import { SSRExchange } from 'next-urql'
 import Router from 'next/router'
 import { dedupExchange, Exchange, fetchExchange, stringifyVariables } from 'urql'
 import { pipe, tap } from 'wonka'
 import {
+  DeletePostMutationVariables,
   LoginMutation,
   LogoutMutation,
   MeDocument,
@@ -25,6 +26,14 @@ const errorExchange: Exchange = ({ forward }) => ops$ => {
       }
     })
   )
+}
+
+const invalidateAllPosts = (cache: Cache) => {
+  const allFields = cache.inspectFields('Query')
+  const fieldInfos = allFields.filter(info => info.fieldName === 'posts')
+  fieldInfos.forEach(fi => {
+    cache.invalidate('Query', 'posts', fi.arguments)
+  })
 }
 
 export const createUrlClient = (ssrExchange: SSRExchange) => ({
@@ -73,12 +82,12 @@ export const createUrlClient = (ssrExchange: SSRExchange) => ({
               )
             }
           },
+          deletePost: (_result, args, cache, info) => {
+            const id = (args as DeletePostMutationVariables).id
+            cache.invalidate({ __typename: 'Post', id })
+          },
           createPost: (_result, args, cache, info) => {
-            const allFields = cache.inspectFields('Query')
-            const fieldInfos = allFields.filter(info => info.fieldName === 'posts')
-            fieldInfos.forEach(fi => {
-              cache.invalidate('Query', 'posts', fi.arguments)
-            })
+            invalidateAllPosts(cache)
           },
           logout: (_result, args, cache, info) => {
             betterUpdateQuery<LogoutMutation, MeQuery>(cache, { query: MeDocument }, _result, () => ({ me: null }))
@@ -88,6 +97,7 @@ export const createUrlClient = (ssrExchange: SSRExchange) => ({
               if (result.login.errors) {
                 return query
               }
+              invalidateAllPosts(cache)
               return {
                 me: result.login.user
               }

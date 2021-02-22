@@ -14,9 +14,10 @@ import {
   Root,
   UseMiddleware
 } from 'type-graphql'
-import { getConnection, getRepository } from 'typeorm'
+import { getConnection, getManager } from 'typeorm'
 import { Post } from '../entity/Post'
 import { Updoot } from '../entity/Updoot'
+import { User } from '../entity/User'
 import { isAuth } from '../middleware/isAuth'
 
 @InputType()
@@ -43,6 +44,20 @@ export class PostResolver {
     return root.text.slice(0, 50)
   }
 
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId)
+  }
+
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(@Root() post: Post, @Ctx() { updootLoader, req }: MyContext) {
+    if (!req.session.userId) {
+      return null
+    }
+    const updoot = await updootLoader.load({ postId: post.id, userId: req.session.userId })
+    return updoot ? updoot.sum : null
+  }
+
   @Query(() => PaginatedPost)
   async posts(
     @Arg('limit', () => Int) limit: number,
@@ -62,9 +77,8 @@ export class PostResolver {
       ? `(select sum from updoot where userId=${userId} and postId = post.id) voteStatus`
       : 'null as voteStatus'
     const q = `
-      select post.*, JSON_OBJECT('id', user.id, 'username', user.username, 'created_at', user.created_at) creator, ${voteStatusQuery}
+      select post.*, ${voteStatusQuery}
       from post
-      inner join user on user.id = post.creatorId
       ${
         cursor
           ? `where post.created_at < '${moment.unix(Number.parseFloat(cursor) / 1000).format('YYYY-MM-DD hh:mm:ss')}'`
@@ -72,8 +86,6 @@ export class PostResolver {
       }
       order by post.created_at DESC
       limit ${realLimitPlusOne}`
-
-    console.log(q)
 
     const posts = await getConnection().query(q)
 
@@ -84,61 +96,70 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg('id', () => Int) id: number, @Ctx() ctx: MyContext): Promise<Post | undefined> {
-    const { entityManager } = ctx
-    return entityManager.findOne(Post, id)
+  post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id)
   }
 
   @Mutation(() => Post)
   @UseMiddleware(isAuth)
-  createPost(@Arg('input') input: PostInput, @Ctx() { req, entityManager }: MyContext): Promise<Post> {
-    const post = entityManager.create(Post, {
+  createPost(@Arg('input') input: PostInput, @Ctx() { req }: MyContext): Promise<Post> {
+    const post = Post.create({
       ...input,
       creatorId: req.session.userId
     })
-    return entityManager.save(post)
+    return Post.save(post)
   }
 
   @Mutation(() => Post, { nullable: true })
   async updatePost(
     @Arg('id', () => Int) id: number,
     @Arg('title') title: string,
-    @Ctx() ctx: MyContext
-  ): Promise<Post | null> {
-    const { entityManager } = ctx
-    const post = await entityManager.findOne(Post, id)
+    @Arg('text') text: string,
+    @Ctx() { req }: MyContext
+  ): Promise<Post | undefined> {
+    const post = await Post.findOne(id)
     if (!post) {
-      return null
+      throw new Error('Post not found')
     }
+
+    if (post.creatorId !== req.session.userId) {
+      throw new Error('Not authorized')
+    }
+
     post.title = title
-    return entityManager.save(post)
+    post.text = text
+    return Post.save(post)
   }
 
   @Mutation(() => Boolean)
-  async deletePost(@Arg('id', () => Int) id: number): Promise<boolean> {
-    const postRepository = getRepository(Post)
-    try {
-      postRepository.delete(id)
-      return true
-    } catch (error) {
-      return false
+  @UseMiddleware(isAuth)
+  async deletePost(@Arg('id', () => Int) id: number, @Ctx() { req }: MyContext): Promise<boolean | undefined> {
+    const post = await Post.findOne(id)
+    if (!post) {
+      throw new Error('Post not found')
     }
+    if (post.creatorId !== req.session.userId) {
+      throw new Error('Not authorized')
+    }
+    Updoot.delete({ postId: id })
+    Post.delete({ id })
+    return true
   }
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
   async vote(@Arg('postId', () => Int) postId: number, @Arg('value', () => Int) value: number, @Ctx() ctx: MyContext) {
-    const { req, entityManager } = ctx
+    const { req } = ctx
     const { userId } = req.session
     const isUp = value !== -1
     const realValue = isUp ? 1 : -1
 
-    const post = await entityManager.findOne(Post, postId)
+    const post = await Post.findOne(postId)
     if (!post) {
       return false
     }
 
-    return await entityManager.transaction(async transaction => {
+    return await getManager().transaction(async transaction => {
       try {
         const updoot = await transaction.findOne(Updoot, { where: { postId, userId } })
         const vote = transaction.create(Updoot, {

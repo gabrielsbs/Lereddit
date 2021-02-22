@@ -1,11 +1,11 @@
 import { Field, ObjectType } from 'type-graphql'
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { Post } from './Post'
 import { Updoot } from './Updoot'
 
 @ObjectType()
 @Entity()
-export class User {
+export class User extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
   id: number

@@ -6,5 +6,9 @@ query Post($postId: Int!) {
     created_at
     updated_at
     points
+    creator {
+      id
+      username
+    }
   }
 }

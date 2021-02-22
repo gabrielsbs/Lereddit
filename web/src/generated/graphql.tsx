@@ -79,6 +79,7 @@ export type MutationCreatePostArgs = {
 
 
 export type MutationUpdatePostArgs = {
+  text: Scalars['String'];
   title: Scalars['String'];
   id: Scalars['Int'];
 };
@@ -153,6 +154,16 @@ export type CreatePostMutation = (
   ) }
 );
 
+export type DeletePostMutationVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type DeletePostMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'deletePost'>
+);
+
 export type LoginMutationVariables = Exact<{
   username: Scalars['String'];
   password: Scalars['String'];
@@ -201,6 +212,21 @@ export type RegisterMutation = (
   ) }
 );
 
+export type UpdatePostMutationVariables = Exact<{
+  id: Scalars['Int'];
+  title: Scalars['String'];
+  text: Scalars['String'];
+}>;
+
+
+export type UpdatePostMutation = (
+  { __typename?: 'Mutation' }
+  & { updatePost?: Maybe<(
+    { __typename?: 'Post' }
+    & Pick<Post, 'id' | 'text' | 'title' | 'textSnippet'>
+  )> }
+);
+
 export type VoteMutationVariables = Exact<{
   value: Scalars['Int'];
   postId: Scalars['Int'];
@@ -233,6 +259,10 @@ export type PostQuery = (
   & { post?: Maybe<(
     { __typename?: 'Post' }
     & Pick<Post, 'id' | 'title' | 'text' | 'created_at' | 'updated_at' | 'points'>
+    & { creator: (
+      { __typename?: 'User' }
+      & Pick<User, 'id' | 'username'>
+    ) }
   )> }
 );
 
@@ -294,6 +324,15 @@ export const CreatePostDocument = gql`
 export function useCreatePostMutation() {
   return Urql.useMutation<CreatePostMutation, CreatePostMutationVariables>(CreatePostDocument);
 };
+export const DeletePostDocument = gql`
+    mutation DeletePost($id: Int!) {
+  deletePost(id: $id)
+}
+    `;
+
+export function useDeletePostMutation() {
+  return Urql.useMutation<DeletePostMutation, DeletePostMutationVariables>(DeletePostDocument);
+};
 export const LoginDocument = gql`
     mutation Login($username: String!, $password: String!) {
   login(userInfo: {username: $username, password: $password}) {
@@ -337,6 +376,20 @@ export const RegisterDocument = gql`
 export function useRegisterMutation() {
   return Urql.useMutation<RegisterMutation, RegisterMutationVariables>(RegisterDocument);
 };
+export const UpdatePostDocument = gql`
+    mutation UpdatePost($id: Int!, $title: String!, $text: String!) {
+  updatePost(id: $id, title: $title, text: $text) {
+    id
+    text
+    title
+    textSnippet
+  }
+}
+    `;
+
+export function useUpdatePostMutation() {
+  return Urql.useMutation<UpdatePostMutation, UpdatePostMutationVariables>(UpdatePostDocument);
+};
 export const VoteDocument = gql`
     mutation Vote($value: Int!, $postId: Int!) {
   vote(value: $value, postId: $postId)
@@ -366,6 +419,10 @@ export const PostDocument = gql`
     created_at
     updated_at
     points
+    creator {
+      id
+      username
+    }
   }
 }
     `;

@@ -12,11 +12,13 @@ import { HelloResolver } from './resolver/hello'
 import { PostResolver } from './resolver/post'
 import { UserResolver } from './resolver/user'
 import { MyContext } from './type'
+import { createUpdootLoader } from './utils/createUpdootLoader'
+import { createUserLoader } from './utils/createUserLoader'
 
 const port = 4000
 const app = express()
 
-createConnection().then(async connection => {
+createConnection().then(async () => {
   app.use(express.json())
   app.use(
     cors({
@@ -48,7 +50,12 @@ createConnection().then(async connection => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false
     }),
-    context: ({ req, res }): MyContext => ({ entityManager: connection.manager, req, res })
+    context: ({ req, res }): MyContext => ({
+      req,
+      res,
+      userLoader: createUserLoader(),
+      updootLoader: createUpdootLoader()
+    })
   })
   apolloServer.applyMiddleware({ app, cors: false })
 })
